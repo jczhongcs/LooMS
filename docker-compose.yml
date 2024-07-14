@@ -1,0 +1,15 @@
+version: '2.3'
+
+# TODO: Map the USER into this container as well so the user doesn't have to use sudo
+services:
+  waterlooms:
+    build: ./
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    working_dir: /waterlooms
+    ports:
+      - 25:25
+    volumes:
+      - ./:/waterlooms
+      - ./data:/data
+    command: tail -f /dev/null

@@ -1,0 +1,10 @@
+# Ignore mzml, mzXML and RAW files.
+!toy.mzXML
+!toy.mzXML_feature_all_z
+!toy.mzXML_feature_all_z_svr_nn_score
+
+*.mzML
+*.mzXML
+*.RAW
+*.mzXML_feature_all_z
+*.mzXML_feature_all_z_svr_nn_score

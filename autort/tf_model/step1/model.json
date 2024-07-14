@@ -1,0 +1,12 @@
+{
+  "dp_model": {
+    "0": "../../data1/tf_model//step1/model_0.h5"
+  },
+  "max_x_length": 98,
+  "aa": "../../data1/tf_model//step1/aa.tsv",
+  "rt_min": 0.0,
+  "rt_max": 98.9458507777778,
+  "scaling_method": "min_max",
+  "encode_method": "Embedding",
+  "add_reverse": 0
+}

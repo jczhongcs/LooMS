@@ -1,0 +1,121 @@
+ private void combineRawIsotope()
+    {
+        generateRawRTSandMapRT();
+//        Comparator<MSOneTrail> compareByZandMZandRT = Comparator
+//                .comparing(MSOneTrail::getRt)
+//                .thenComparing(MSOneTrail::getMz);
+        //filter out the ms1 precursor with mz range and z and combine, sort by time and mz
+//            ArrayList<MSOneTrail>  sortedMSOneTrail = (ArrayList<MSOneTrail>) arrRawMSOneTrail.stream().filter(
+//                    x->x.getMz()>=dmzMin && x.getMz()<=dmzMax && x.getZ()==iz && x.isIzCombine()==false
+//            ).sorted(compareByZandMZandRT)
+//                .collect(Collectors.toList());
+
+        ProgressBar pb = new ProgressBar("Combine Precursor Progress", arrRawRts.length);
+        pb.start();
+        for(int rt=0;rt<arrRawRts.length;rt++)
+        {
+            pb.step();
+            for(MSOneTrail msoneTrail:mapRTMSoneRawTrail.get(arrRawRts[rt])) {
+
+
+                if (msoneTrail.isIzCombine())
+                    continue;
+                double dmzMin = msoneTrail.getMz() * (1 - Utils.thresholdMS1PPM / 2.0);
+                double dmzMax = msoneTrail.getMz() * (1 + Utils.thresholdMS1PPM / 2.0);
+                int iz = msoneTrail.getZ();
+
+
+//                if(msoneTrail.getRt()>133.4071 && msoneTrail.getRt()<133.4072
+//                        && msoneTrail.getMz()>334.044 && msoneTrail.getMz()<334.045)
+//                {
+//
+//                    int test=0;
+//                }
+
+                    //initial data
+                double dmaxInt = 0.0;
+                ArrayList<Double> listMZs = new ArrayList<>();
+                ArrayList<Double> listRTs = new ArrayList<>();
+                ArrayList<Double> listINTs = new ArrayList<>();
+                dmaxInt = msoneTrail.getQuantification_peaks_area();
+                double dpreIntValue = msoneTrail.getQuantification_peaks_area();
+                listMZs.add(msoneTrail.getMz());
+                listRTs.add(msoneTrail.getRt());
+                listINTs.add(msoneTrail.getQuantification_peaks_area());
+                msoneTrail.setIzCombine(true);
+                MSOneTrail addMSoneTrail = msoneTrail;
+
+
+                int curRT =rt;
+
+                int findRT = rt+1;
+                boolean isDecrease = false;//判断丰度是否下降，若丰度下降双上升则生成新的precursor，规则是丰度大于之前最大丰度的一倍
+                boolean isNewPrecursor = false;//用于恢复
+//                ArrayList<MSOneTrail> arrRecoverCombine = new ArrayList<>();
+                ArrayList<Integer> arriLowestPos = new ArrayList<>();
+                while(findRT<arrRawRts.length && findRT-curRT<= Utils.thresholdMS1ScanSpan)
+                {
+                    MSOneTrail sameMSoneTrail = canFindSameTrailInNextScan(findRT,dmzMin,dmzMax,msoneTrail.getMz(),iz);
+                    if(sameMSoneTrail!=null)
+                    {
+                        if (sameMSoneTrail.getQuantification_peaks_area() < dpreIntValue)
+                        {
+                            isDecrease = true;
+
+                        }else if(isDecrease)
+                        {
+                            if(sameMSoneTrail.getQuantification_peaks_area()*Utils.thresholdMS1IntensityPercentagofMax > dmaxInt)
+                            {
+                                //split new precursor
+                                arriLowestPos.add(iLowestPos);
+                                dmaxInt = sameMSoneTrail.getQuantification_peaks_area();
+                                addMSoneTrail = sameMSoneTrail;
+                            }
+                                //不拆分
+                            if (sameMSoneTrail.getQuantification_peaks_area() > dmaxInt) {
+                                dmaxInt = sameMSoneTrail.getQuantification_peaks_area();
+                                addMSoneTrail = sameMSoneTrail;
+                            }
+                            iLowestPos = findRT;
+
+                        }else{
+                            if (sameMSoneTrail.getQuantification_peaks_area() > dmaxInt) {
+                                dmaxInt = sameMSoneTrail.getQuantification_peaks_area();
+                                addMSoneTrail =sameMSoneTrail;
+
+                            }
+                        }
+
+                        listMZs.add(sameMSoneTrail.getMz());
+                        listRTs.add(sameMSoneTrail.getRt());
+                        listINTs.add(sameMSoneTrail.getQuantification_peaks_area());
+
+                        sameMSoneTrail.setIzCombine(true);
+                        curRT = findRT;
+                        findRT++;
+                        dpreIntValue = sameMSoneTrail.getQuantification_peaks_area();
+                    }
+                    else
+                    {
+                        findRT++;
+                        //没有匹配，则为0值
+                        dpreIntValue = 0;
+                        isDecrease = true;
+                    }
+
+                }
+                addMSoneTrail.setArrMS1Mzs(listMZs);
+                addMSoneTrail.setArrMS1Rts(listRTs);
+                addMSoneTrail.setArrMS1Ins(listINTs);
+                addMSoneTrail.quantifyPeaks();
+
+                arrMSOneTrail.add(addMSoneTrail);
+
+            }
+        }
+        pb.stop();
+//        ArrayList<MSOneTrail>  sortedMSOneTrail = (ArrayList<MSOneTrail>) arrRawMSOneTrail.stream()
+//                .sorted(compareByZandMZandRT)
+//                .collect(Collectors.toList());
+//        System.out.println("test");
+    }
